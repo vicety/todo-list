@@ -23,3 +23,11 @@ body,html{
       height:100%;
       background: blue;
 }
+
+.aaa{
+    border-color: #aa44ff;
+    border-width: 10px;
+    padding:10px;
+    margin: 10px;
+    /*border: 10px solid red;*/
+}

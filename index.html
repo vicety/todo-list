@@ -3,34 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <title>My Todo App</title>
+    <link rel="stylesheet" href="node_modules/normalize.css/normalize.css">
     <link rel="stylesheet" href="css/base.css">
 </head>
 <body>
 <div class="container">
-    <div class="add-task">
-        <input type="text">
-        <button>submit</button>
-    </div>
+    <h1>Todo List</h1>
+    <form class="add-task">
+        <input name="content"
+               type="text"
+               placeholder="输入什么吧"
+               autofocus
+               autocomplete="off"
+        >
+        <button type="submit">submit</button>
+    </form>
     <div class="task-list">
-        <div class="task-item">
-            <span><input type="checkbox"></span>
-            <span class="task-content">item content 1</span>
+        <!--<div class="task-item">-->
+            <!--<span><input type="checkbox"></span>-->
+            <!--<span class="task-content">item content 1</span>-->
+            <!--<span>delete</span>-->
+            <!--<span>detail</span>-->
+        <!--</div>-->
+    </div>
+    <div class="task-detail-mask"></div>
+    <div class="task-detail">
+        <div class="content">Title</div>
+        <div>
+            <div class="desc">
+                <textarea id=""></textarea>
+            </div>
         </div>
-        <div class="task-item">
-            <span><input type="checkbox"></span>
-            <span class="task-content">item content 1</span>
-        </div>
-        <div class="task-item">
-            <span><input type="checkbox"></span>
-            <span class="task-content">item content 1</span>
-        </div>
-        <div class="task-item">
-            <span><input type="checkbox"></span>
-            <span class="task-content">item content 1</span>
+        <div class="remind">
+            <input type="date">
+            <button type="submit">submit</button>
         </div>
     </div>
-</div>
+</div><!-- 总容器结束 -->
 <script src="node_modules/jquery/dist/jquery.js"></script>
+<script src="node_modules/store/store.js"></script>
 <script src="js/base.js"></script>
 </body>
 </html>
