@@ -40,6 +40,7 @@ input,
 .task-item ,
 button,
 .task-detail-mask,
+.task-detail,
 textarea{
     padding: 10px;
     border-radius: 4px;
@@ -129,6 +130,8 @@ button{
     right: 0;
     left: 0;
     background: rgba(30,30,30,.3);
+    position: fixed;
+
 }
 
 .task-detail .content{
