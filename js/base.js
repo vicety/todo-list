@@ -11,7 +11,8 @@
         $update_form,
         $task_detail_content,
         $task_detail_content_input,
-        $checkbox_complete;
+        $checkbox_complete,
+        $alerter = $('.alerter');
     // store.clear();
 
     init();
@@ -69,6 +70,11 @@
         })
     }
 
+    function listen_notify_ignored() {
+        var $close_notify = $('.close-notify');
+        $close_notify.on('click', ignore_notify);
+    }
+
     function show_task_detail(index) {
         render_task_detail(index);
         current_index = index;
@@ -93,10 +99,42 @@
         return true;
     }
 
+    function listen_task_time() {
+        var current_timestamp = (new Date()).getTime();
+        console.log(task_list);
+        setInterval(function () {
+            for(var i = 0;i<task_list.length;i++){
+                var item = task_list[i];
+                if(!item.timestamp || item.informed) continue;
+                console.log(item.timestamp);
+                if(current_timestamp - item.timestamp >= 1){
+                    console.log(item.informed);
+                    update_task(i, {informed: true});
+                    notify(i);
+                }
+            }
+        },500)
+    }
+
+    function notify(i) {
+        var $notify_area = $('.notify-area'), $notify_title = $('.notify-title'), $notify_content = $('.notify-content');
+        $notify_title.html(task_list[i].content);
+        $notify_content.html(task_list[i].desc);
+        $notify_area.show();
+        $alerter.get(0).play();
+        listen_notify_ignored();
+    }
+
+    function ignore_notify() {
+        var $notify_area = $('.notify-area');
+        $notify_area.hide();
+    }
+
     function init() {
         task_list = store.get('task_list') || [];
         // if(task_list.length) render_task_list();
         render_task_list();
+        listen_task_time();
     }
 
     // 更新本地list和网页list
@@ -134,9 +172,8 @@
         $task_detail_trigger = $('.action.detail');
         listen_task_detail();
         $checkbox_complete = $('.task-list .complete');
-        console.log("all items with checkbox", $checkbox_complete);
+        //console.log("all items with checkbox", $checkbox_complete);
         listen_checkbox_complete();
-        //console.log($task_detail);
     }
 
     function render_task_item(data, index){
@@ -184,8 +221,9 @@
             '                </div>\n' +
             '            </div>\n' +
             '            <div class="remind">\n' +
-            '<label>提醒时间</label>'+
-            '                <input class="input-item datetime" name="remind_date" type="date" value="'+item.remind_date+'">\n' +
+            '<div>提醒时间</div>'+
+            '               <div datetime_combo> <input class="input-item datetime" name="remind_date" type="date" value="'+item.remind_date+'"">\n' +
+            ' <input class="datetime_hour" value="'+(item.remind_hour || "")+'">时<input class="datetime_min" value="'+(item.remind_min || "")+'">分</div>'+
             '                <div class="input-item"><button type="submit">submit</button></div>\n' +
             '            </div>\n' +
             '        </form>';
@@ -206,7 +244,12 @@
             data.content = $(this).find('[name = content]').val();
             data.desc = $(this).find('[name = desc]').val();
             data.remind_date = $(this).find('[name = remind_date]').val();
-            console.log(data);
+            data.remind_hour = $(this).find('.datetime_hour').val();
+            data.remind_min = $(this).find('.datetime_min').val();
+            if(data.remind_date && data.remind_hour && data.remind_min) data.time = data.remind_date+" "+data.remind_hour+":"+data.remind_min, data.timestamp = (new Date(data.time)).getTime();
+            else data.time = "";
+            //console.log("data submitted: ", data);
+            //console.log(data.timestamp);
             update_task(index, data);
             hide_task_detail();
         })
