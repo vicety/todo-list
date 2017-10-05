@@ -2,9 +2,11 @@
 ;(function(){
     'use strict';
     var $form_add_task = $('.add-task'),
+        $window = $(window),
+        $body = $('body'),
         task_list = {},
         $task_detail = $('.task-detail'),
-        $task_detail_mask = $('.task-detail-mask'),
+        $task_detail_mask = $('.mask'),
         $task_delete_trigger,
         $task_detail_trigger,
         current_index,
@@ -13,9 +15,9 @@
         $task_detail_content_input,
         $checkbox_complete,
         $alerter = $('.alerter');
-    // store.clear();
 
     init();
+
 
     $form_add_task.on('submit', on_add_task_form_submit);
     $task_detail_mask.on('click', hide_task_detail);
@@ -26,26 +28,23 @@
         $input = $(this).find('input[name=content]');
         new_task.content =  $input.val();
         if(!new_task.content) return;
-        if(add_task(new_task)){
-            //render_task_list();
-            $input.val('');
-        }
+        if(add_task(new_task)) $input.val('');
     }
 
     function rebind_delete() {
         $task_delete_trigger.on('click', function () {
-            console.log("clicked delete");
             var $this = $(this);
             var $item = $this.parent().parent();
-            var index = $item.data('index');
-            console.log(index);
-            var tmp = confirm("sure to delete?");
-            tmp ? delete_task(index) : null;
+            var index = parseInt($item.data('index'));
+            console.log("delete" ,index);
+            custom_alert({title: 'Warning', content: "sure to delete "+task_list[index].content+'?'})
+                .then(function (res) {
+                    res ? delete_task(index) : null;
+                });
         })
     }
 
     function listen_task_detail() {
-        //console.log($task_delete)
         var index;
         $('.task-item').on('dblclick', function () {
             index = parseInt($(this).data('index'));
@@ -53,8 +52,7 @@
         });
         $task_detail_trigger.on('click', function () {
             // dom对象转jquery对象
-            var $this = $(this);
-            var $item = $this.parent().parent();
+            var $item = $(this).parent().parent();
             index = parseInt($item.data('index'));
             console.log("clicked detail index: ", index);
             show_task_detail(index);
@@ -64,7 +62,6 @@
     function listen_checkbox_complete() {
         $checkbox_complete.on('click', function () {
             var is_complete = $(this).is(':checked');
-            console.log(is_complete)
             var index = parseInt($(this).parent().parent().data('index'));
             update_task(index, {complete:is_complete});
         })
@@ -83,7 +80,7 @@
     }
 
     function update_task(index, data) {
-        if(index == undefined || !task_list[index]) return;
+        if(index === undefined || !task_list[index]) return;
         task_list[index] = $.extend({}, task_list[index], data);
         refresh();
     }
@@ -116,6 +113,90 @@
         },500)
     }
 
+    function custom_alert(args) {
+        // args should include title, content
+        var $alert_area = $('<div>' +
+            '<div class="alert-title">'+args.title+'</div>' +
+            '<div class="alert-content">'+args.content+'</div> ' +
+            '<div><button class="alert-confirm">confirm</button><button class="alert-cancel">cancel</button></div>' +
+            '' +
+            '</div>').css({
+            width : 250,
+            height: "auto",
+            background: '#444',
+            position: 'fixed',
+            padding: '10px',
+            'border-radius': '4px',
+            'box-shadow': '0 1px 2px rgba(0, 0, 0, 0.4)'
+        });
+
+        var $alert_title = $alert_area.find(".alert-title").css({
+            padding: '5px 10px',
+            'font-weight' : '900',
+            'font-size': '20px',
+            'text-align': 'center',
+            }),
+            $alert_content = $alert_area.find('.alert-content').css({
+                'text-align': 'center',
+                'padding': '10px'
+            }),
+            $alert_confirm = $alert_area.find('.alert-confirm'),
+            $alert_cancel = $alert_area.find('.alert-cancel'),
+            dfd = $.Deferred(),
+            confirmed,
+            timer;
+
+            timer = setInterval(function () {
+                if(confirmed !== undefined){
+                    dfd.resolve(confirmed);
+                    clearInterval(timer);
+                    close_alert();
+                }
+            }, 50);
+
+            $alert_confirm.on('click', function () {
+                confirmed = true;
+            });
+
+            $alert_cancel.on('click', function () {
+                confirmed = false;
+            });
+        
+        function close_alert() {
+            $mask_area.remove();
+            $alert_area.remove();
+        }
+
+        var $mask_area = $('<div class="custom_alert_mask"><div>').css({
+            //display: "block"
+        });
+
+        function adjust_box_position() {
+            var window_width = $window.width()
+                , window_height = $window.height()
+                , box_width = $alert_area.width()
+                , box_height = $alert_area.height()
+                , move_x
+                , move_y
+            ;
+
+            move_x = (window_width - box_width) / 2;
+            move_y = ((window_height - box_height) / 2)*0.8;
+
+            $alert_area.css({
+                left: move_x,
+                top: move_y
+            });
+        }
+
+        $window.on('resize', adjust_box_position);
+
+        adjust_box_position();
+        $mask_area.appendTo($body);
+        $alert_area.appendTo($body);
+        return dfd.promise();
+    }
+
     function notify(i) {
         var $notify_area = $('.notify-area'), $notify_title = $('.notify-title'), $notify_content = $('.notify-content');
         $notify_title.html(task_list[i].content);
@@ -146,7 +227,6 @@
     
     function delete_task(ind) {
         // 这里不转成int是不行的(尽管在网页上的console可以自动转换)
-        ind = parseInt(ind);
         if(ind === undefined || !task_list[ind]) return;
         task_list.splice(ind,1);
         refresh();
@@ -162,10 +242,13 @@
         var completed_items = [];
         for(var i = 0; i < task_list.length; i++){
             var $task = render_task_item(task_list[i], i);
-            if(task_list[i].complete) completed_items.push($task), $task.find('.complete').attr('checked', true);
+            if(task_list[i].complete){
+                completed_items.push($task);
+                $task.find('.complete').attr('checked', true);
+            }
             else $task_list.append($task);
         }
-        for(var i = 0; i < completed_items.length; i++) $task_list.append(completed_items[i]);
+        for(i = 0; i < completed_items.length; i++) $task_list.append(completed_items[i]);
         $task_delete_trigger = $('.action.delete');
         rebind_delete();
         //console.log("here");
@@ -177,8 +260,9 @@
     }
 
     function render_task_item(data, index){
+        var list_item_tpl;
         if(data.complete){
-            var list_item_tpl =
+            list_item_tpl =
                 '<div class="task-item task-completed" data-index="'+index+' ">' +
                 '            <span><input class="complete" checked type="checkbox"></span>' +
                 '            <span class="task-content"><del>'+data.content+'</del></span>' +
@@ -189,7 +273,7 @@
                 '</div>'
         }
         else{
-            var list_item_tpl =
+            list_item_tpl =
                 '<div class="task-item" data-index="'+index+' ">' +
                 '            <span><input class="complete"  type="checkbox"></span>' +
                 '            <span class="task-content">'+data.content+'</span>' +
@@ -205,7 +289,7 @@
 
     function render_task_detail(index) {
         //console.log("index detail at ",task_list[ind]);
-        if(index == undefined || !task_list[index]) return;
+        if(index === undefined || !task_list[index]) return;
         var item = task_list[index];
         console.log(item);
         var tpl = '<form>\n' +
@@ -221,8 +305,8 @@
             '                </div>\n' +
             '            </div>\n' +
             '            <div class="remind">\n' +
-            '<div>提醒时间</div>'+
-            '               <div datetime_combo> <input class="input-item datetime" name="remind_date" type="date" value="'+item.remind_date+'"">\n' +
+            '<div class="item-detail-label">提醒时间</div>'+
+            '               <div> <input class="input-item datetime" name="remind_date" type="date" value="'+item.remind_date+'"">\n' +
             ' <input class="datetime_hour" value="'+(item.remind_hour || "")+'">时<input class="datetime_min" value="'+(item.remind_min || "")+'">分</div>'+
             '                <div class="input-item"><button type="submit">submit</button></div>\n' +
             '            </div>\n' +
@@ -246,10 +330,11 @@
             data.remind_date = $(this).find('[name = remind_date]').val();
             data.remind_hour = $(this).find('.datetime_hour').val();
             data.remind_min = $(this).find('.datetime_min').val();
-            if(data.remind_date && data.remind_hour && data.remind_min) data.time = data.remind_date+" "+data.remind_hour+":"+data.remind_min, data.timestamp = (new Date(data.time)).getTime();
+            if(data.remind_date && data.remind_hour && data.remind_min){
+                data.time = data.remind_date+" "+data.remind_hour+":"+data.remind_min;
+                data.timestamp = (new Date(data.time)).getTime();
+            }
             else data.time = "";
-            //console.log("data submitted: ", data);
-            //console.log(data.timestamp);
             update_task(index, data);
             hide_task_detail();
         })

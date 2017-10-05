@@ -39,7 +39,8 @@ h1 {
 input,
 .task-item ,
 button,
-.task-detail-mask,
+.mask,
+.custom_alert_mask,
 textarea{
     padding: 10px;
     border-radius: 4px;
@@ -72,11 +73,8 @@ input[type=text]:focus, input[type=date]:focus{
     margin-right: 1%;
 }
 
-[type=submit]{
-    background: rgb(171, 199, 220);
-}
-
-.add-task [type=submit]{
+.add-task [type=submit]
+{
     width: 15%;
     background: rgb(171, 199, 220);
 }
@@ -131,7 +129,8 @@ button{
     border-radius: 4px 0 0 4px ;
 }
 
-.task-detail-mask{
+.custom_alert_mask,
+.mask{
     top: 0;
     bottom: 0;
     right: 0;
@@ -218,4 +217,18 @@ textarea{
 
 .alerter{
     display: none;
+}
+.alert-cancel{
+    float: right;
+    margin-right: 10%;
+}
+
+.alert-confirm{
+    background: rgb(141, 169, 190);
+    float: left;
+    margin-left: 10%;
+}
+
+.item-detail-label{
+    padding: 0 10px 10px;
 }
